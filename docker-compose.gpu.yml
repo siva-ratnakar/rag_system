@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+        limits:
+          memory: 16G  # More memory for GPU systems
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_NUM_PARALLEL=8  # More parallel processing for GPU
+      - OLLAMA_MAX_LOADED_MODELS=2

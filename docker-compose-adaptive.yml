@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # Ollama service - adaptive GPU/CPU
+  ollama:
+    image: ollama/ollama:latest
+    container_name: rag_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama/models:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=24h
+      - OLLAMA_NUM_PARALLEL=${OLLAMA_NUM_PARALLEL:-4}
+      - OLLAMA_MAX_LOADED_MODELS=1
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+    # GPU support will be added by override file if available
+
+  # Weaviate vector database
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.25.5
+    container_name: rag_weaviate
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    volumes:
+      - ./weaviate/weaviate_data:/var/lib/weaviate
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: '/var/lib/weaviate'
+      DEFAULT_VECTORIZER_MODULE: 'none'
+      ENABLE_MODULES: 'text2vec-openai,text2vec-cohere,text2vec-huggingface,ref2vec-centroid,generative-openai,generative-cohere,generative-palm'
+      CLUSTER_HOSTNAME: 'node1'
+    restart: unless-stopped
+
+  # RAG Application
+  rag_app:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: rag_application
+    depends_on:
+      - weaviate
+      - ollama
+    volumes:
+      - ./data:/app/data:ro
+      - ./app:/app/src
+    environment:
+      - WEAVIATE_URL=http://weaviate:8080
+      - OLLAMA_URL=http://ollama:11434
+      - PYTHONPATH=/app/src
+    working_dir: /app/src
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    command: tail -f /dev/null
+
+networks:
+  default:
+    name: rag_network
