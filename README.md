@@ -1,4 +1,4 @@
-# Spiritual Texts RAG System
+# Indian Cultural and Spiritual Texts RAG System
 
 A comprehensive Retrieval-Augmented Generation (RAG) system designed for spiritual and religious texts, including Puranas, Bhagavad Gita, Mahabharata, Sastras, and Sai Baba's works. This system combines OCR capabilities for PDF processing with intelligent document retrieval and AI-powered question answering.
 
